@@ -1,0 +1,13 @@
+# Copier en terraform.tfvars pour personnaliser (optionnel : toutes les valeurs ont un defaut).
+# Le mot de passe de la base ne va JAMAIS ici : export TF_VAR_db_password='...'
+
+namespace   = "liora-wp"
+environment = "dev"
+
+# Acces SSH (optionnel) : paire de cles existante + votre IP publique en /32
+# key_name          = "liora-key"
+# ssh_allowed_cidrs = ["203.0.113.10/32"]
+
+# enable_https = true
+# ebs_size     = 10
+# db_multi_az  = true

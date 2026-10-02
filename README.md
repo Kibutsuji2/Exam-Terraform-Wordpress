@@ -133,3 +133,52 @@ terraform destroy
 | `Unknown output type: yes` | `aws configure set output json` |
 | Erreur `FreeTierRestriction` sur la base | compte en offre gratuite : `terraform apply -var 'db_backup_retention_period=0'`, ou `-var 'db_multi_az=false'` si le Multi-AZ est refusé |
 | Page inaccessible juste après l'`apply` | attendre la fin du script (3 à 5 min) |
+
+2. La configurer sur ton poste, sans sudo
+aws configure
+3. Vérifier
+aws sts get-caller-identity
+
+## cd ~/Downloads/wordpress-terraform
+export TF_VAR_db_password='MotDePasseSolide2026'
+terraform init
+terraform validate
+terraform plan -out=tfplan
+terraform apply tfplan
+
+Tu peux aussi en choisir un toi-même, par exemple :
+export TF_VAR_db_password='Wp-Liora-2026-Secure!'
+
+## Regarde ce qui existe :
+aws rds describe-db-instances --region eu-west-3 \
+  --query 'DBInstances[].[DBInstanceIdentifier,DBInstanceStatus,InstanceCreateTime]' --output table
+  
+## La solution : donner un nom unique à ton déploiement. Ne supprime pas la base existante si tu n'es pas certain qu'elle t'appartient.
+cd ~/Downloads/wordpress-terraform
+echo 'namespace = "geoffroy-wp"' > terraform.tfvars
+terraform plan -out=tfplan
+terraform apply tfplan
+## Supprimer Ancienne DB si ça vient de toi 
+aws rds delete-db-instance --db-instance-identifier wordpress-db \
+  --skip-final-snapshot --region eu-west-3
+
+## Pour relire un plan enregistré :
+terraform show tfplan
+
+## Oui. Trois remplacements suffisent pour désactiver le chiffrement dans tes fichiers actuels :
+cd ~/Downloads/wordpress-terraform
+
+sed -i -E 's/(storage_encrypted[[:space:]]*=[[:space:]]*)true/\1false/' modules/rds/main.tf
+sed -i -E 's/^([[:space:]]*encrypted[[:space:]]*=[[:space:]]*)true/\1false/' modules/ec2/main.tf modules/ebs/main.tf
+
+grep -rn "encrypted" modules/*/main.tf
+
+## Le grep affiche : 
+modules/ebs/main.tf:5:  encrypted         = false
+modules/ec2/main.tf:47:    encrypted   = false
+modules/rds/main.tf:19:  storage_encrypted = false
+
+## Puis relance : 
+terraform plan -out=tfplan
+terraform apply tfplan
+  
